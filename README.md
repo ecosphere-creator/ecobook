@@ -1,6 +1,6 @@
 # slides
 
-Slide deck / presentation editor, polls, image assets, archive export
+Slide deck / presentation editor, interactive "book" reading sessions, polls, image assets, archive export
 
 Split out of `rwid/lms` (the original pre-eco monolith) as an independent,
 eco-managed domain — see `rwid/auth`'s
@@ -17,7 +17,7 @@ been ported from `lms-backend` yet.
 
 ## Split from (lms-backend)
 
-SlideDeckController/SlideDeckService, SlideEditorPrefsController/SlideEditorPrefsService, AuthorImageAssetController/AuthorImageAssetService, AuthorPollTemplateController/AuthorPollTemplateService, PollVoteController/PollVoteService, KttArchiveService
+SlideDeckController/SlideDeckService, SlideEditorPrefsController/SlideEditorPrefsService, AuthorImageAssetController/AuthorImageAssetService, AuthorPollTemplateController/AuthorPollTemplateService, PollVoteController/PollVoteService, KttArchiveService, BookSessionController/BookSessionService (interactive deck reading sessions, keyed by deckId -- not course booking)
 
 ## Depends on
 
