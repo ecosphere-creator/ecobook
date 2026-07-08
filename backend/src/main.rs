@@ -1,10 +1,17 @@
+mod auth_client;
 mod auth_extractor;
+mod community_client;
 mod config;
+mod dto;
 mod error;
 mod handlers;
 mod jwt;
+mod models;
+mod payments_client;
+mod repo;
 mod routes;
 mod state;
+mod storage;
 
 use config::AppConfig;
 use state::AppState;

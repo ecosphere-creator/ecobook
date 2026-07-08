@@ -1,6 +1,11 @@
 use std::{sync::Arc, time::Duration};
 
-use axum::{http::HeaderValue, response::Response, routing::get, Router};
+use axum::{
+    http::HeaderValue,
+    response::Response,
+    routing::{get, post, put},
+    Router,
+};
 use tower::ServiceBuilder;
 use tower_governor::{governor::GovernorConfigBuilder, key_extractor::SmartIpKeyExtractor, GovernorLayer};
 use tower_http::{
@@ -59,6 +64,89 @@ pub fn build_router(state: AppState) -> Router {
 
     let api_routes = Router::new()
         .route("/health", get(handlers::health::health))
+        // slide decks
+        .route("/book", post(handlers::slide_decks::create_slide_deck))
+        .route("/book/catalog", get(handlers::slide_decks::get_published_catalog))
+        .route(
+            "/book/import",
+            post(handlers::slide_decks::import_slide_deck),
+        )
+        .route(
+            "/book/owner/:owner_id",
+            get(handlers::slide_decks::get_slide_decks_by_owner),
+        )
+        .route(
+            "/book/event/:event_id",
+            get(handlers::slide_decks::get_slide_decks_by_event),
+        )
+        .route(
+            "/book/:id_or_slug/public",
+            get(handlers::slide_decks::get_slide_deck_public),
+        )
+        .route(
+            "/book/:id/export",
+            get(handlers::slide_decks::export_slide_deck),
+        )
+        .route(
+            "/book/:id",
+            get(handlers::slide_decks::get_slide_deck)
+                .put(handlers::slide_decks::update_slide_deck)
+                .delete(handlers::slide_decks::delete_slide_deck),
+        )
+        // editor prefs
+        .route(
+            "/book/:deck_id/editor-prefs",
+            get(handlers::editor_prefs::get_editor_prefs).put(handlers::editor_prefs::update_editor_prefs),
+        )
+        // book session
+        .route(
+            "/book/:deck_id/session",
+            get(handlers::book_sessions::get_session).post(handlers::book_sessions::upsert_session),
+        )
+        .route(
+            "/book/:deck_id/session/merge",
+            post(handlers::book_sessions::merge_anon_into_user),
+        )
+        // poll votes
+        .route(
+            "/book/:deck_id/slides/:slide_id/elements/:element_id/poll-votes",
+            get(handlers::poll_votes::get_poll_votes).post(handlers::poll_votes::submit_vote),
+        )
+        // author image assets
+        .route(
+            "/author-assets/images",
+            get(handlers::author_image_assets::list)
+                .post(handlers::author_image_assets::add)
+                .delete(handlers::author_image_assets::remove),
+        )
+        .route(
+            "/author-assets/images/usage",
+            get(handlers::author_image_assets::usage),
+        )
+        // author poll templates
+        .route(
+            "/author-poll-templates",
+            get(handlers::author_poll_templates::list).post(handlers::author_poll_templates::create),
+        )
+        .route(
+            "/author-poll-templates/:template_id",
+            put(handlers::author_poll_templates::update).delete(handlers::author_poll_templates::delete),
+        )
+        .route(
+            "/author-poll-templates/:template_id/usage",
+            get(handlers::author_poll_templates::usage),
+        )
+        .route(
+            "/author-poll-templates/:template_id/sync",
+            post(handlers::author_poll_templates::sync),
+        )
+        // files
+        .route("/files/upload", post(handlers::files::upload))
+        .route("/files/view/:file_id", get(handlers::files::view_file))
+        .route(
+            "/files/:file_id",
+            axum::routing::delete(handlers::files::delete_file),
+        )
         .layer(GovernorLayer {
             config: general_governor_config,
         })

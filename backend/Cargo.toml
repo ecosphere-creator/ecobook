@@ -24,6 +24,7 @@ image = { version = "0.25", default-features = false, features = ["png", "jpeg",
 tower_governor = "0.4.2"
 tower = { version = "0.5.3", default-features = false, features = ["util"] }
 governor = "0.6"
+reqwest = { version = "0.13.4", default-features = false, features = ["json", "rustls", "query"] }
 
 [profile.release]
 opt-level = 3

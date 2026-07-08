@@ -26,6 +26,14 @@ pub struct AppConfig {
     pub server_port: u16,
     pub api_base_url: String,
     pub cors_allowed_origins: Vec<String>,
+    /// Resolved by `eco configure` when these peers are composed into the
+    /// same estate (see resolve_peer_base_urls in eco/configure.sh).
+    pub auth_base_url: String,
+    pub payments_base_url: String,
+    pub community_base_url: String,
+    /// Interim local-disk storage for slide images, until MinIO/S3 is
+    /// provisioned for the estate.
+    pub storage_local_path: String,
 }
 
 impl AppConfig {
@@ -77,6 +85,14 @@ impl AppConfig {
                 .map(|s| s.trim().to_string())
                 .filter(|s| !s.is_empty())
                 .collect(),
+            auth_base_url: env::var("AUTH_BASE_URL")
+                .unwrap_or_else(|_| "http://localhost:9001/api".to_string()),
+            payments_base_url: env::var("PAYMENTS_BASE_URL")
+                .unwrap_or_else(|_| "http://localhost:9014/api".to_string()),
+            community_base_url: env::var("COMMUNITY_BASE_URL")
+                .unwrap_or_else(|_| "http://localhost:9011/api".to_string()),
+            storage_local_path: env::var("STORAGE_LOCAL_PATH")
+                .unwrap_or_else(|_| "./storage".to_string()),
         })
     }
 }
