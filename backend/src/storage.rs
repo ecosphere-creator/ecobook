@@ -84,9 +84,13 @@ pub async fn upload_slide_image(
         .map(|id| id.to_hex())
         .unwrap_or_default();
 
+    // Domain-prefixed path (not bare /files/view/{id}) so the production
+    // gateway, which shares one public /api origin across every domain,
+    // can route this to the right backend by path alone. See
+    // routes.rs for the matching route registration.
     let base = state.config.api_base_url.trim_end_matches('/');
     Ok(UploadedImage {
-        file_url: format!("{base}/files/view/{file_id}"),
+        file_url: format!("{base}/slides-files/view/{file_id}"),
         file_id,
     })
 }
@@ -140,9 +144,13 @@ pub async fn upload_narration_audio(
         .map(|id| id.to_hex())
         .unwrap_or_default();
 
+    // Domain-prefixed path (not bare /files/view/{id}) so the production
+    // gateway, which shares one public /api origin across every domain,
+    // can route this to the right backend by path alone. See
+    // routes.rs for the matching route registration.
     let base = state.config.api_base_url.trim_end_matches('/');
     Ok(UploadedImage {
-        file_url: format!("{base}/files/view/{file_id}"),
+        file_url: format!("{base}/slides-files/view/{file_id}"),
         file_id,
     })
 }

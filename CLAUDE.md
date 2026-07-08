@@ -103,6 +103,17 @@ had correct logic in Java and was carried over as-is — including the
 dedicated handling anywhere in the Java service either (frontend-only
 concern, stored and echoed back unchanged).
 
+## Gateway-routable file URLs
+
+Slide-image/slide-cover/narration uploads are returned as
+`{API_BASE_URL}/slides-files/view/{id}` (also registered as second routes
+alongside the original bare `/files/*`), not the bare path. Production
+puts every domain behind one shared gateway origin, and several domains
+each implement their own `/files/*` — the gateway can't tell them apart
+without a domain-unique path segment. See `eco configure`'s
+`generate_gateway_config` and `courses/CLAUDE.md`'s "File storage" section
+for the fuller explanation.
+
 ## Verified
 
 Built, ran against live `auth`, `payments`, and `community` instances and

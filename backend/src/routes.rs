@@ -147,6 +147,17 @@ pub fn build_router(state: AppState) -> Router {
             "/files/:file_id",
             axum::routing::delete(handlers::files::delete_file),
         )
+        // Same handlers, also reachable under this domain's own path
+        // prefix so the production gateway (path-based fan-out across a
+        // shared /api origin, no other way to tell which backend owns a
+        // given file id) can route them correctly. See eco's
+        // generate_gateway_config.
+        .route("/slides-files/upload", post(handlers::files::upload))
+        .route("/slides-files/view/:file_id", get(handlers::files::view_file))
+        .route(
+            "/slides-files/:file_id",
+            axum::routing::delete(handlers::files::delete_file),
+        )
         .layer(GovernorLayer {
             config: general_governor_config,
         })
