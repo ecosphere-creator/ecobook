@@ -1,0 +1,22 @@
+# Rust
+/target/
+
+# IDE
+.idea/
+.vscode/
+*.swp
+*.swo
+*~
+.DS_Store
+
+# Logs
+logs/
+*.log
+
+# Storage
+storage/
+storage-test/
+
+# Environment
+.env*
+!.env*.example
