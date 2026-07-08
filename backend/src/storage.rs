@@ -68,6 +68,63 @@ pub async fn upload_slide_image(
         file_type: "slide-image".to_string(),
         file_size: webp_bytes.len() as i64,
         storage_path,
+        content_type: "image/webp".to_string(),
+        uploaded_by: owner_id.to_string(),
+        created_at: Utc::now(),
+    };
+
+    let files: Collection<FileRecord> = state.db.collection("files");
+    let result = files
+        .insert_one(&record, None)
+        .await
+        .map_err(|e| AppError::Internal(e.into()))?;
+    let file_id = result
+        .inserted_id
+        .as_object_id()
+        .map(|id| id.to_hex())
+        .unwrap_or_default();
+
+    let base = state.config.api_base_url.trim_end_matches('/');
+    Ok(UploadedImage {
+        file_url: format!("{base}/files/view/{file_id}"),
+        file_id,
+    })
+}
+
+/// Guided-narration audio uploads. Not one of the Java FileService's
+/// IMAGE_FILE_TYPES, so stored as-is (no WebP conversion), matching the
+/// same "raw" pattern used for lead-proofs in `site`.
+pub async fn upload_narration_audio(
+    state: &AppState,
+    owner_id: &str,
+    content_type: Option<&str>,
+    original_filename: Option<&str>,
+    bytes: Vec<u8>,
+) -> Result<UploadedImage, AppError> {
+    let safe_name = match original_filename {
+        Some(name) if !name.trim().is_empty() => name.to_string(),
+        _ => "narration.webm".to_string(),
+    };
+    let filename = format!("{}_{safe_name}", Uuid::new_v4());
+    let storage_path = format!("slide-narration/{owner_id}/{filename}");
+
+    let full_path = PathBuf::from(&state.config.storage_local_path)
+        .join("slide-narration")
+        .join(owner_id);
+    tokio::fs::create_dir_all(&full_path)
+        .await
+        .map_err(|e| AppError::Internal(e.into()))?;
+    tokio::fs::write(full_path.join(&filename), &bytes)
+        .await
+        .map_err(|e| AppError::Internal(e.into()))?;
+
+    let record = FileRecord {
+        id: None,
+        filename: filename.clone(),
+        file_type: "slide-narration".to_string(),
+        file_size: bytes.len() as i64,
+        storage_path,
+        content_type: content_type.unwrap_or("application/octet-stream").to_string(),
         uploaded_by: owner_id.to_string(),
         created_at: Utc::now(),
     };
@@ -102,7 +159,7 @@ pub async fn read_file(state: &AppState, file_id: &str) -> Result<StoredFile, Ap
         .await
         .map_err(|e| AppError::Internal(e.into()))?;
     Ok(StoredFile {
-        content_type: "image/webp".to_string(),
+        content_type: record.content_type,
         bytes,
     })
 }

@@ -10,6 +10,11 @@ use crate::{auth_extractor::AuthUser, error::{AppError, AppResult}, state::AppSt
 
 const AUTHOR_ROLES: &[&str] = &["OWNER", "MENTOR", "MEMBER"];
 
+/// Mirrors the Java monolith's shared `/files/upload?type=` contract that
+/// the frontend still sends (`type=slide-image` for element/cover images,
+/// `type=slide-narration` for guided-reveal audio) -- this domain only
+/// ever serves those two types, so `type` just selects image-vs-raw
+/// storage rather than being a free-form dispatch key.
 pub async fn upload(
     State(state): State<AppState>,
     auth: AuthUser,
@@ -18,27 +23,40 @@ pub async fn upload(
     auth.require_role(AUTHOR_ROLES)?;
 
     let mut content_type = None;
+    let mut filename = None;
     let mut bytes = None;
+    let mut upload_type = None;
     while let Some(field) = multipart
         .next_field()
         .await
         .map_err(|e| AppError::BadRequest(format!("Invalid multipart body: {e}")))?
     {
-        if field.name() == Some("file") {
-            content_type = field.content_type().map(|s| s.to_string());
-            bytes = Some(
-                field
-                    .bytes()
-                    .await
-                    .map_err(|e| AppError::BadRequest(format!("Failed to read upload: {e}")))?
-                    .to_vec(),
-            );
-            break;
+        match field.name() {
+            Some("file") => {
+                content_type = field.content_type().map(|s| s.to_string());
+                filename = field.file_name().map(|s| s.to_string());
+                bytes = Some(
+                    field
+                        .bytes()
+                        .await
+                        .map_err(|e| AppError::BadRequest(format!("Failed to read upload: {e}")))?
+                        .to_vec(),
+                );
+            }
+            Some("type") => {
+                upload_type = Some(field.text().await.unwrap_or_default());
+            }
+            _ => {}
         }
     }
     let bytes = bytes.ok_or_else(|| AppError::BadRequest("Missing 'file' field".to_string()))?;
 
-    let uploaded = storage::upload_slide_image(&state, &auth.user_id, content_type.as_deref(), bytes).await?;
+    let uploaded = if upload_type.as_deref() == Some("slide-narration") {
+        storage::upload_narration_audio(&state, &auth.user_id, content_type.as_deref(), filename.as_deref(), bytes)
+            .await?
+    } else {
+        storage::upload_slide_image(&state, &auth.user_id, content_type.as_deref(), bytes).await?
+    };
 
     Ok((
         StatusCode::CREATED,

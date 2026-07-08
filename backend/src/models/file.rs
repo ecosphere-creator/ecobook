@@ -16,8 +16,17 @@ pub struct FileRecord {
     pub file_size: i64,
     #[serde(rename = "storagePath")]
     pub storage_path: String,
+    /// Serving content-type. Images uploaded via `upload_slide_image` are
+    /// always "image/webp" after conversion; raw uploads (narration audio)
+    /// keep whatever the client sent.
+    #[serde(rename = "contentType", default = "default_content_type")]
+    pub content_type: String,
     #[serde(rename = "uploadedBy")]
     pub uploaded_by: String,
     #[serde(rename = "createdAt")]
     pub created_at: DateTime<Utc>,
+}
+
+fn default_content_type() -> String {
+    "application/octet-stream".to_string()
 }
