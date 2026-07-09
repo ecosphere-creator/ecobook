@@ -114,6 +114,26 @@ without a domain-unique path segment. See `eco configure`'s
 `generate_gateway_config` and `courses/CLAUDE.md`'s "File storage" section
 for the fuller explanation.
 
+## Observability (added 2026-07-09)
+
+Logs are structured JSON (`tracing_subscriber::fmt().json()`), not the
+default human-readable text — prep for centralized log aggregation
+(Grafana Loki is the leading candidate, self-hosted alongside the rest of
+the estate rather than a SaaS product, in keeping with `eco`'s host-native
+philosophy).
+
+Every request gets a correlation id (`src/request_id.rs`): reused from an
+incoming `x-request-id` header if present, otherwise a fresh UUID,
+recorded on the request's tracing span (so every JSON log line during
+that request carries it) and echoed back on the response. All three peer
+clients (`AuthClient::is_platform_owner`, `PaymentsClient::
+has_completed_slide_payment`, `CommunityClient::has_active_registration`)
+now forward this same header on their outbound calls, so a single
+`canAccess` check that fans out to all three peers is fully
+reconstructable as one trail under a single `request_id`, once logs are
+aggregated somewhere queryable — the domain where this matters most,
+given it's the one with the widest fan-out.
+
 ## Verified
 
 Built, ran against live `auth`, `payments`, and `community` instances and
