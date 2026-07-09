@@ -1,20 +1,4 @@
-mod auth_client;
-mod auth_extractor;
-mod community_client;
-mod config;
-mod dto;
-mod error;
-mod handlers;
-mod jwt;
-mod models;
-mod payments_client;
-mod repo;
-mod routes;
-mod state;
-mod storage;
-
-use config::AppConfig;
-use state::AppState;
+use slides_service::{config::AppConfig, routes, state::AppState};
 
 #[tokio::main]
 async fn main() -> anyhow::Result<()> {
