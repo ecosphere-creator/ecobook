@@ -27,7 +27,11 @@ impl CommunityClient {
             "{}/events/{event_id}/registration/{user_id}",
             self.base_url.trim_end_matches('/')
         );
-        match self.http.get(&url).send().await {
+        let mut request = self.http.get(&url);
+        if let Some(request_id) = crate::request_id::current() {
+            request = request.header(crate::request_id::HEADER_NAME, request_id);
+        }
+        match request.send().await {
             Ok(response) if response.status().is_success() => response
                 .json::<RegistrationResponse>()
                 .await

@@ -169,7 +169,10 @@ pub fn build_router(state: AppState) -> Router {
         .with_state(state);
 
     // Mirrors the estate's other services' `server.servlet.context-path: /api`.
-    Router::new().nest("/api", api_routes).layer(cors)
+    Router::new()
+        .nest("/api", api_routes)
+        .layer(cors)
+        .layer(axum::middleware::from_fn(crate::request_id::propagate))
 }
 
 /// Same response headers as every other service in the estate.

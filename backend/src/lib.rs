@@ -12,6 +12,7 @@ pub mod jwt;
 pub mod models;
 pub mod payments_client;
 pub mod repo;
+pub mod request_id;
 pub mod routes;
 pub mod state;
 pub mod storage;
