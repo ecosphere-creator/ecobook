@@ -10,12 +10,22 @@ use crate::{
     repo, state::AppState,
 };
 
+/// Every handler here is already scoped to the caller's own `user_id` (see
+/// the `repo::author_image_assets::find_by_owner*` calls below) -- this is
+/// a per-author personal image library, not a platform-wide resource, so it
+/// should use the same author role set as the rest of this domain
+/// (slide_decks.rs, files.rs, editor_prefs.rs, poll_votes.rs) rather than
+/// platform-OWNER-only. Gating on OWNER blocked every non-owner author from
+/// using their own image library when inserting an image into their own
+/// deck.
+const AUTHOR_ROLES: &[&str] = &["OWNER", "MENTOR", "MEMBER"];
+
 fn normalize(url: &str) -> String {
     url.trim().to_string()
 }
 
 pub async fn list(State(state): State<AppState>, auth: AuthUser) -> AppResult<Json<Vec<AuthorImageAssetDto>>> {
-    auth.require_role(&["OWNER"])?;
+    auth.require_role(AUTHOR_ROLES)?;
     let assets = repo::author_image_assets::find_by_owner(&state, &auth.user_id).await?;
     Ok(Json(assets.iter().map(AuthorImageAssetDto::from).collect()))
 }
@@ -32,7 +42,7 @@ pub async fn add(
     auth: AuthUser,
     Json(body): Json<AddAssetRequest>,
 ) -> AppResult<Json<AuthorImageAssetDto>> {
-    auth.require_role(&["OWNER"])?;
+    auth.require_role(AUTHOR_ROLES)?;
     let file_url = normalize(&body.file_url);
     let now = bson::DateTime::now();
 
@@ -70,7 +80,7 @@ pub async fn remove(
     auth: AuthUser,
     Query(q): Query<FileUrlQuery>,
 ) -> AppResult<StatusCode> {
-    auth.require_role(&["OWNER"])?;
+    auth.require_role(AUTHOR_ROLES)?;
     repo::author_image_assets::delete_by_owner_and_file_url(&state, &auth.user_id, &normalize(&q.file_url)).await?;
     Ok(StatusCode::NO_CONTENT)
 }
@@ -90,7 +100,7 @@ pub async fn usage(
     auth: AuthUser,
     Query(q): Query<FileUrlQuery>,
 ) -> AppResult<Json<Vec<ImageUsage>>> {
-    auth.require_role(&["OWNER"])?;
+    auth.require_role(AUTHOR_ROLES)?;
     let normalized = normalize(&q.file_url);
 
     let decks = repo::slide_decks::find_by_owner(&state, &auth.user_id).await?;
