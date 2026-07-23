@@ -15,14 +15,6 @@ use tower_http::{
 
 use crate::{handlers, state::AppState};
 
-/// Everyday limit: allows normal page-load bursts of API calls without
-/// being annoying, while still bounding sustained abuse. Endpoints added
-/// later that need stricter limits (e.g. anything write-heavy or
-/// enumeration-prone) should get their own tighter GovernorLayer, same
-/// pattern as auth's login/register split.
-const GENERAL_BURST: u32 = 30;
-const GENERAL_REPLENISH_SECS: u64 = 1;
-
 const MAX_BODY_BYTES: usize = 10 * 1024 * 1024;
 
 pub fn build_router(state: AppState) -> Router {
@@ -55,8 +47,8 @@ pub fn build_router(state: AppState) -> Router {
     let general_governor_config = Arc::new(
         GovernorConfigBuilder::default()
             .key_extractor(SmartIpKeyExtractor)
-            .per_second(GENERAL_REPLENISH_SECS)
-            .burst_size(GENERAL_BURST)
+            .per_second(state.config.rate_limit_general_replenish_secs)
+            .burst_size(state.config.rate_limit_general_burst)
             .finish()
             .expect("valid governor config"),
     );

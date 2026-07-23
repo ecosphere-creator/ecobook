@@ -34,6 +34,12 @@ pub struct AppConfig {
     /// Interim local-disk storage for slide images, until MinIO/S3 is
     /// provisioned for the estate.
     pub storage_local_path: String,
+    /// Everyday rate limit shared across all routes, per source IP. Tunable
+    /// via env instead of a recompile -- dev traffic (page-load fan-out
+    /// across peer services, hot reload) legitimately needs a larger burst
+    /// than what's safe to hardcode as the only value.
+    pub rate_limit_general_burst: u32,
+    pub rate_limit_general_replenish_secs: u64,
 }
 
 impl AppConfig {
@@ -93,6 +99,14 @@ impl AppConfig {
                 .unwrap_or_else(|_| "http://localhost:9011/api".to_string()),
             storage_local_path: env::var("STORAGE_LOCAL_PATH")
                 .unwrap_or_else(|_| "./storage".to_string()),
+            rate_limit_general_burst: env::var("RATE_LIMIT_GENERAL_BURST")
+                .ok()
+                .and_then(|v| v.parse().ok())
+                .unwrap_or(120),
+            rate_limit_general_replenish_secs: env::var("RATE_LIMIT_GENERAL_REPLENISH_SECS")
+                .ok()
+                .and_then(|v| v.parse().ok())
+                .unwrap_or(1),
         })
     }
 }
