@@ -17,6 +17,15 @@ const AUTHOR_ROLES: &[&str] = &["OWNER", "MENTOR", "MEMBER"];
 
 // ---- access control, ported from SlideDeckService ----
 
+// NOTE (2026-08-12): the paywall is NOT active yet. All published decks are
+// fully accessible to everyone — no payment or event-registration gate. When
+// the paywall ships, set PAYWALL_ACTIVE to true: the `payments`/`community`
+// peer checks in `can_access` below are kept and still type-checked so the
+// gate can be re-enabled without re-adding the logic. Until then, the gate is
+// deliberately open so the LXS can be plugged into any estate (e.g. the
+// getecosphere homepage) with example content.
+const PAYWALL_ACTIVE: bool = false;
+
 async fn is_editor(state: &AppState, deck: &SlideDeck, user_id: &str) -> bool {
     if user_id == deck.owner_id {
         return true;
@@ -25,6 +34,9 @@ async fn is_editor(state: &AppState, deck: &SlideDeck, user_id: &str) -> bool {
 }
 
 async fn can_access(state: &AppState, deck: &SlideDeck, user_id: Option<&str>) -> bool {
+    if !PAYWALL_ACTIVE {
+        return true;
+    }
     let Some(user_id) = user_id else { return false };
     if user_id == deck.owner_id {
         return true;

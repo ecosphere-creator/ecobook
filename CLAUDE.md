@@ -8,6 +8,21 @@ last of the seven domains, since it's the only one that depends on both
 `rwid/auth/backend/docs/auth-rewrote-from-java-to-rust.md` for the origin
 of this pattern.
 
+## LXS: reusable domain
+
+`slides` is now packaged as a reusable **LXS** (`slides@1.0.0`), published to
+`getecosphere/lxs-registry` under Eco Creator, and consumable from any estate
+via `ecompose.yml` → `services.<name>: { lxs: slides@1.0.0, grants: {...} }`.
+It ships both a backend (`backend/`, Rust axum) and a Leptos frontend; it can
+also be composed from source (`path: slides/backend`) while in development.
+
+**Paywall disabled** (2026-08-12): `can_access` in
+`backend/src/handlers/slide_decks.rs` short-circuits to `true` because the
+`PAYWALL_ACTIVE` const is `false`. All published decks are fully public so the
+LXS can be plugged into any estate (e.g. the getecosphere homepage) with
+example content. The `payments`/`community` access chain is retained and
+type-checked; flip `PAYWALL_ACTIVE` to `true` when the paywall ships.
+
 ## Status
 
 Mostly fully ported and verified. Source: `SlideDeckController`/
