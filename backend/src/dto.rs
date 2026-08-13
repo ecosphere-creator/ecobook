@@ -106,7 +106,7 @@ impl From<&SlideDeck> for SlideDeckDto {
 
 /// Request shape for create/update. Deliberately has no id/ownerId/
 /// createdAt/updatedAt -- those are always server-controlled (ownerId
-/// especially: see the security fix in CLAUDE.md, the Java version took
+/// especially: see the security fix in README.md, the Java version took
 /// this straight from the request body).
 #[derive(Debug, Deserialize)]
 #[serde(rename_all = "camelCase")]

@@ -471,7 +471,7 @@ pub async fn delete_slide_deck(
 }
 
 /// `.ktt` archive export/import (KttArchiveService in the Java version)
-/// was deliberately not ported -- see CLAUDE.md. Left as an explicit 501
+/// was deliberately not ported -- see README.md. Left as an explicit 501
 /// rather than silently dropping the routes.
 pub async fn export_slide_deck() -> StatusCode {
     StatusCode::NOT_IMPLEMENTED
