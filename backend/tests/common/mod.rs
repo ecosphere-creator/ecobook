@@ -5,7 +5,7 @@
 //! tests point them at `wiremock::MockServer`s.
 use jsonwebtoken::{encode, Algorithm, EncodingKey, Header};
 use serde::Serialize;
-use slides_service::{config::AppConfig, routes, state::AppState};
+use ecobook_service::{config::AppConfig, routes, state::AppState};
 use std::net::SocketAddr;
 use uuid::Uuid;
 

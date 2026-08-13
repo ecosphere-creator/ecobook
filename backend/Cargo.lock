@@ -1022,6 +1022,36 @@ dependencies = [
 ]
 
 [[package]]
+name = "ecobook-service"
+version = "0.1.0"
+dependencies = [
+ "anyhow",
+ "aws-sdk-s3",
+ "axum",
+ "bson",
+ "chrono",
+ "dotenvy",
+ "futures-util",
+ "governor",
+ "image",
+ "jsonwebtoken",
+ "mongodb",
+ "reqwest",
+ "serde",
+ "serde_json",
+ "thiserror 1.0.69",
+ "tokio",
+ "tower",
+ "tower-http 0.5.2",
+ "tower_governor",
+ "tracing",
+ "tracing-subscriber",
+ "uuid",
+ "webp",
+ "wiremock",
+]
+
+[[package]]
 name = "either"
 version = "1.17.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -3204,36 +3234,6 @@ name = "slab"
 version = "0.4.12"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "0c790de23124f9ab44544d7ac05d60440adc586479ce501c1d6d7da3cd8c9cf5"
-
-[[package]]
-name = "slides-service"
-version = "0.1.0"
-dependencies = [
- "anyhow",
- "aws-sdk-s3",
- "axum",
- "bson",
- "chrono",
- "dotenvy",
- "futures-util",
- "governor",
- "image",
- "jsonwebtoken",
- "mongodb",
- "reqwest",
- "serde",
- "serde_json",
- "thiserror 1.0.69",
- "tokio",
- "tower",
- "tower-http 0.5.2",
- "tower_governor",
- "tracing",
- "tracing-subscriber",
- "uuid",
- "webp",
- "wiremock",
-]
 
 [[package]]
 name = "smallvec"

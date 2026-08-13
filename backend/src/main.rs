@@ -1,4 +1,4 @@
-use slides_service::{
+use ecobook_service::{
     config::{AppConfig, StorageBackend},
     routes, s3_storage,
     state::AppState,
@@ -26,7 +26,7 @@ async fn main() -> anyhow::Result<()> {
         .default_database()
         .ok_or_else(|| anyhow::anyhow!("MONGODB_URI must include a database name"))?;
 
-    tracing::info!(port = config.server_port, "starting slides-service");
+    tracing::info!(port = config.server_port, "starting ecobook-service");
 
     let state = AppState::new(db, config.clone());
 

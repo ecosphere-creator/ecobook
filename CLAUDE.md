@@ -1,20 +1,22 @@
-# slides
+# ecobook
 
-Slide decks ("books"), editor prefs, author image/poll-template libraries,
-poll votes, and reader sessions. Split out of `rwid/lms` (the pre-eco
-monolith) into an independent eco domain, rewritten in Rust (axum). Ported
-last of the seven domains, since it's the only one that depends on both
-`payments` and `community`. See
-`rwid/auth/backend/docs/auth-rewrote-from-java-to-rust.md` for the origin
-of this pattern.
+A reusable **portrait book reader** LXS. Cloned from the `slides` domain and
+rebuilt around a Phaser.js pixel-perfect reader: fullscreen portrait pages,
+paper background, Times New Roman at normal size, next/prev page navigation,
+no toolbar, exit via the browser back button. This first iteration skips the
+page-turn animation.
+
+Backend is the same Rust (axum) book API as `slides` (decks, catalog, reader
+sessions); the frontend is a self-contained Phaser portrait reader.
 
 ## LXS: reusable domain
 
-`slides` is now packaged as a reusable **LXS** (`slides@1.0.0`), published to
+`ecobook` is packaged as a reusable **LXS** (`ecobook@1.0.0`), published to
 `getecosphere/lxs-registry` under Eco Creator, and consumable from any estate
-via `ecompose.yml` → `services.<name>: { lxs: slides@1.0.0, grants: {...} }`.
-It ships both a backend (`backend/`, Rust axum) and a Leptos frontend; it can
-also be composed from source (`path: slides/backend`) while in development.
+via `ecompose.yml` → `services.<name>: { lxs: ecobook@1.0.0, grants: {...} }`.
+It ships both a backend (`backend/`, Rust axum) and a Phaser frontend
+(`frontend/`); it can also be composed from source (`path: ecobook/backend`)
+while in development.
 
 **Paywall disabled** (2026-08-12): `can_access` in
 `backend/src/handlers/slide_decks.rs` short-circuits to `true` because the
@@ -22,6 +24,13 @@ also be composed from source (`path: slides/backend`) while in development.
 LXS can be plugged into any estate (e.g. the getecosphere homepage) with
 example content. The `payments`/`community` access chain is retained and
 type-checked; flip `PAYWALL_ACTIVE` to `true` when the paywall ships.
+
+## Backend notes
+
+Most of the backend still reads as "slides" (crate `ecobook-service`, routes
+`/api/book/*`) because it was cloned from `slides`. The frontend is the new
+Phaser reader. The converter scripts under `scripts/` generate deck JSON from
+markdown — same shape as slides, so decks seeded for slides work for ecobook.
 
 ## Status
 

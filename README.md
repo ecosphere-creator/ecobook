@@ -1,28 +1,46 @@
-# slides
+# ecobook
 
-Slide deck / presentation editor, interactive "book" reading sessions, polls, image assets, archive export
-
-Split out of `rwid/lms` (the original pre-eco monolith) as an independent,
-eco-managed domain — see `rwid/auth`'s
-`backend/docs/auth-rewrote-from-java-to-rust.md` for the reasoning and
-pattern this split follows (explicit dependencies instead of direct
-cross-domain database access, security hardening baseline, etc.).
-
-## Status
-
-Scaffold only. Boots, connects to MongoDB, validates JWTs issued by `auth`,
-has the estate's standard security baseline (rate limiting, security
-headers, body size limits, CORS) wired up. The actual domain logic has not
-been ported from `lms-backend` yet.
-
-## Split from (lms-backend)
-
-SlideDeckController/SlideDeckService, SlideEditorPrefsController/SlideEditorPrefsService, AuthorImageAssetController/AuthorImageAssetService, AuthorPollTemplateController/AuthorPollTemplateService, PollVoteController/PollVoteService, KttArchiveService, BookSessionController/BookSessionService (interactive deck reading sessions, keyed by deckId -- not course booking)
-
-## Depends on
-
-auth, community, payments
+A reusable **portrait book reader** LXS for eco estates. Cloned from the
+`slides` domain and rebuilt around a **Phaser.js** pixel-perfect reader:
+fullscreen portrait pages, warm paper background, Times New Roman at normal
+size, next/prev page navigation, no toolbar, exit via the browser back
+button. This first iteration has no page-turn animation.
 
 ## Structure
 
-- `backend/` — Rust (axum) service
+- `backend/` — Rust (axum) book API (`ecobook-service`): decks, catalog,
+  reader sessions, files
+- `frontend/` — Phaser.js portrait reader (Rust static server + `reader.html`/
+  `reader.js`)
+- `lxs.yml` — the LXS contract
+- `scripts/` — markdown → deck JSON converter + Mongo seeder (same shape as
+  slides, so decks seeded for slides work for ecobook)
+
+## LXS
+
+Published as `ecobook@1.0.0` to `getecosphere/lxs-registry`. Consume from an
+estate:
+
+```yaml
+services:
+  ecobook-backend:
+    lxs: ecobook@1.0.0
+    grants:
+      secrets: [JWT_SECRET, MONGODB_URI]
+```
+
+Compose the reader frontend from source while in development:
+
+```yaml
+  ecobook-frontend:
+    path: ecobook/frontend
+    runtimes:
+      - rust
+```
+
+## Build + publish
+
+```bash
+eco lxs build
+eco lxs publish ecobook@1.0.0
+```

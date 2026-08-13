@@ -1,11 +1,11 @@
-name: slides
-domain: slides
+name: ecobook
+domain: ecobook
 version: 1.0.0
 category: Content
 publisher: getecosphere
 status: unverified
 license: mit
-summary: "Slides — slide decks (books), editor prefs, image/poll-template libraries, poll votes, and reader sessions"
+summary: "Ecobook — a reusable portrait book reader (Phaser.js) with a Rust axum book API"
 
 targets:
   - linux/amd64
@@ -14,7 +14,7 @@ artifacts: {}
 
 contract:
   version: 1
-  api: "slides REST API (/api/book, /api/book/:id, /api/book/catalog, /api/slides-files/*, author assets, poll templates, sessions)"
+  api: "ecobook REST API (/api/book, /api/book/:id, /api/book/catalog, /api/ecobook-files/*)"
   env:
     required:
       - SERVER_PORT
