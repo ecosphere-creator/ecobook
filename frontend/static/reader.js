@@ -62,12 +62,13 @@
     });
   }
 
-  var scene = {
-    preload: function () {
-      // nothing to preload; fonts come from CSS/DOM default
+  var scene = new Phaser.Class({
+    Extends: Phaser.Scene,
+    initialize: function BookScene () {
+      Phaser.Scene.call(this, { key: "book" });
     },
     create: function () {
-      this.paperBg = this.add.rectangle(PW / 2, PH / 2, PW, PH, PAPER);
+      this.add.rectangle(PW / 2, PH / 2, PW, PH, PAPER);
       this.titleText = this.add.text(90, 120, "", {
         fontFamily: FONT, fontSize: 44, color: "#9a6b1f", fontStyle: "bold",
         wordWrap: { width: PW - 180 }
@@ -83,11 +84,11 @@
       // pointer/tap zones: left third = prev, right two thirds = next
       this.prevZone = this.add.zone(0, PH / 2, PW / 3, PH).setOrigin(0, 0.5).setInteractive();
       this.nextZone = this.add.zone(PW / 3, PH / 2, (PW * 2) / 3, PH).setOrigin(0, 0.5).setInteractive();
-      this.prevZone.on("pointerdown", function () { this.go(-1); }, this);
-      this.nextZone.on("pointerdown", function () { this.go(1); }, this);
+      var self = this;
+      this.prevZone.on("pointerdown", function () { self.go(-1); });
+      this.nextZone.on("pointerdown", function () { self.go(1); });
 
       // keyboard
-      var self = this;
       this.input.keyboard.on("keydown-LEFT", function () { self.go(-1); });
       this.input.keyboard.on("keydown-RIGHT", function () { self.go(1); });
       this.input.keyboard.on("keydown-SPACE", function () { self.go(1); });
@@ -113,13 +114,12 @@
       this.titleText.setOrigin(0, 0).setPosition(90, 110).setAlign("left").setFontSize(44).setText(page.title || "");
       var body = blocks.map(function (b) {
         if (b.kind === "callout") return "❝ " + b.text + " ❞";
-        if (b.kind === "code") return b.text;
         return b.text;
       }).join("\n\n");
       this.bodyText.setOrigin(0, 0).setPosition(90, 210).setAlign("justify").setFontSize(34).setText(body);
       this.pagenoText.setText((pageIdx + 1) + " / " + pages.length).setOrigin(1, 1).setPosition(PW - 90, PH - 90);
     }
-  };
+  });
 
   fetch(API + encodeURIComponent(SLUG))
     .then(function (r) { return r.ok ? r.json() : null; })
@@ -139,7 +139,7 @@
           height: PH
         },
         parent: "app",
-        scene: { preload: scene.preload, create: scene.create }
+        scene: [scene]
       };
       new Phaser.Game(config);
     })
