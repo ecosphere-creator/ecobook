@@ -6,7 +6,8 @@
 //   * long-press (or tap the bottom edge) toggles a bottom control bar:
 //       - page number (display + input to jump)
 //       - A / a font size (enlarge / shrink)
-//       - black / paper / white theme buttons
+//       - deck / black / paper / white theme buttons (deck = authored palette
+//         from the deck's baked theme tokens; falls back to paper)
 //       - first / prev / next / last navigation
 //       - exit button (window.history.back())
 //   * long-press again closes the bar
@@ -22,13 +23,42 @@
     ? "http://127.0.0.1:9015/api/book/"
     : "/api/book/";
 
-  // themes: paper / white / black
+  // themes: paper / white / black — plus a deck-defined theme applied from
+  // the deck's baked token blob (see ecobook deck-document format). The deck
+  // theme is derived from getecosphere design tokens (bg/ink/accent/surface).
   var THEMES = {
     paper: { bg: 0xf4ead6, ink: 0x4a3b28, accent: 0x9a6b1f, barBg: 0xe8d9ba },
     white: { bg: 0xffffff, ink: 0x222222, accent: 0x1f6feb, barBg: 0xf0f0f0 },
     black: { bg: 0x141414, ink: 0xe8e6e3, accent: 0xd9b64a, barBg: 0x222222 }
   };
   var FONT = "'Times New Roman', Georgia, serif";
+
+  function parseColor(c) {
+    if (typeof c !== "string") return null;
+    var m = c.trim().match(/^#([0-9a-fA-F]{6})$/);
+    return m ? parseInt(m[1], 16) : null;
+  }
+
+  // Merge the deck's baked theme tokens (JSON blob in deck.theme) into THEMES
+  // so the imported deck renders with its authored palette by default.
+  function applyDeckTheme(deck) {
+    var raw = deck && deck.theme;
+    if (!raw) return;
+    var t = null;
+    try { t = typeof raw === "string" ? JSON.parse(raw) : raw; } catch (e) { return; }
+    var bg = parseColor(t.bg), ink = parseColor(t.ink), accent = parseColor(t.accent);
+    if (bg === null && ink === null && accent === null) return;
+    THEMES.deck = {
+      bg: bg !== null ? bg : 0xf7f6f2,
+      ink: ink !== null ? ink : 0x17141d,
+      accent: accent !== null ? accent : 0x5b3fd6,
+      barBg: bg !== null ? bg : 0xf7f6f2
+    };
+    themeName = "deck";
+    if (typeof t.fontDisplay === "string" && t.fontDisplay.length) {
+      FONT = "'" + t.fontDisplay.split(",")[0].trim().replace(/^['"]|['"]$/g, "") + "', Georgia, serif";
+    }
+  }
 
   var PW = 900, PH = 1440;
   var pages = [], pageIdx = 0;
@@ -129,7 +159,8 @@
       this.btnA = this.makeBarBtn(PW / 2 - 210, PH - 150, "A", function () { self.setFontSize(fontSize + 4); });
       this.btnSmallA = this.makeBarBtn(PW / 2 - 160, PH - 150, "a", function () { self.setFontSize(fontSize - 4); });
 
-      // theme buttons: black / paper / white
+      // theme buttons: deck (authored palette) / black / paper / white
+      this.btnDeck = this.makeBarBtn(PW / 2 - 140, PH - 150, "✎", function () { self.setTheme("deck"); });
       this.btnBlack = this.makeBarBtn(PW / 2 - 90, PH - 150, "◼", function () { self.setTheme("black"); });
       this.btnPaper = this.makeBarBtn(PW / 2 - 40, PH - 150, "📄", function () { self.setTheme("paper"); });
       this.btnWhite = this.makeBarBtn(PW / 2 + 10, PH - 150, "◻", function () { self.setTheme("white"); });
@@ -149,7 +180,7 @@
       // exit button
       this.btnExit = this.makeBarBtn(PW - 40, PH - 150, "✕", function () { if (window.history.length > 1) window.history.back(); else window.location.href = "/"; });
 
-      this.bar.add([this.btnA, this.btnSmallA, this.btnBlack, this.btnPaper, this.btnWhite,
+      this.bar.add([this.btnA, this.btnSmallA, this.btnDeck, this.btnBlack, this.btnPaper, this.btnWhite,
                     this.btnFirst, this.btnPrev, this.btnNext, this.btnLast,
                     this.pageInput, this.pageInputText, this.btnExit]);
 
@@ -297,10 +328,12 @@
     .then(function (deck) {
       if (!deck) { document.title = "Ecobook — not found"; return; }
       document.title = deck.name + " — Ecobook";
+      applyDeckTheme(deck);
       buildPages(deck);
+      var t0 = THEMES[themeName] || THEMES.paper;
       var config = {
         type: Phaser.AUTO,
-        width: PW, height: PH, backgroundColor: "#f4ead6",
+        width: PW, height: PH, backgroundColor: "#" + t0.bg.toString(16).padStart(6, "0"),
         scale: { mode: Phaser.Scale.FIT, autoCenter: Phaser.Scale.CENTER_BOTH, width: PW, height: PH },
         parent: "app",
         scene: [scene]

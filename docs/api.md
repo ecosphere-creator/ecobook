@@ -19,8 +19,13 @@ Base path: `/api` (estate gateway routes `/api/book/*` to `ecobook-backend`).
   curriculum).
 - `PUT /book/:id` — update. Owner or platform OWNER.
 - `DELETE /book/:id` — delete. Owner or platform OWNER.
-- `GET /book/:id/export` / `POST /book/import` — `501 Not Implemented`
-  (the `.ktt` archive port was deliberately cut).
+- `POST /book/import` — import a deck from the portable markdown deck-document
+  format (YAML frontmatter + 16:9 markdown body). Body is `text/markdown`;
+  auth required (AUTHOR roles). Returns the created deck — same persistence as
+  `POST /book`.
+- `GET /book/:id/export` — export a deck as the portable markdown document
+  (`text/markdown` attachment). Owner or platform OWNER. See
+  `docs/README.md` for the document format.
 
 ## Editor prefs
 

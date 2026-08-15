@@ -3,6 +3,9 @@ name = "ecobook-frontend"
 version = "0.1.0"
 edition = "2021"
 
+# Standalone package: not part of the repo-root Cargo workspace.
+[workspace]
+
 [dependencies]
 axum = "0.7"
 tokio = { version = "1", features = ["macros", "rt-multi-thread", "net"] }

@@ -388,3 +388,84 @@ async fn anonymous_book_sessions_are_created_and_persisted() {
     assert_eq!(second["id"], session_id, "same anon session should be reused, not recreated");
     assert_eq!(second["currentSlideId"], "s2");
 }
+
+/// Import a deck from the portable markdown document and export it back —
+/// verifying the round-trip survives (the feature this domain previously
+/// stubbed as 501).
+#[tokio::test]
+async fn import_then_export_round_trips_the_markdown_document() {
+    let auth = MockServer::start().await;
+    let payments = MockServer::start().await;
+    let community = MockServer::start().await;
+    let app = common::spawn(Peers { auth: &auth.uri(), payments: &payments.uri(), community: &community.uri() }).await;
+
+    let alice = common::object_id_hex(1);
+    let token = common::mint_token(&alice, "alice", "MEMBER");
+
+    let doc = r##"---
+deck:
+  name: "Round Trip Deck"
+  slug: round-trip-deck
+  subtitle: "A subtitle"
+  tags: [one, two]
+theme:
+  base: light
+  bg: "#f7f6f2"
+  ink: "#17141d"
+  accent: "#5b3fd6"
+  surface: "#ffffff"
+---
+
+# First slide title
+
+This is the body paragraph.
+
+> A callout quote.
+
+```text
+println!("hi");
+```
+"##;
+
+    let imported = app
+        .http
+        .post(app.url("/book/import"))
+        .bearer_auth(&token)
+        .header("content-type", "text/markdown")
+        .body(doc)
+        .send()
+        .await
+        .expect("import request");
+    assert_eq!(imported.status(), 201);
+    let imported_body: Value = imported.json().await.unwrap();
+    let deck_id = imported_body["id"].as_str().expect("import returns an id");
+    assert_eq!(imported_body["name"], "Round Trip Deck");
+    assert_eq!(imported_body["ownerId"], alice);
+    // cover + 1 content slide
+    assert_eq!(imported_body["slides"].as_array().unwrap().len(), 2);
+
+    // export must be owner-only
+    let other = common::mint_token(&common::object_id_hex(2), "eve", "MEMBER");
+    let forbidden = app
+        .http
+        .get(app.url(&format!("/book/{deck_id}/export")))
+        .bearer_auth(&other)
+        .send()
+        .await
+        .unwrap();
+    assert_eq!(forbidden.status(), 403);
+
+    let exported = app
+        .http
+        .get(app.url(&format!("/book/{deck_id}/export")))
+        .bearer_auth(&token)
+        .send()
+        .await
+        .unwrap()
+        .error_for_status()
+        .expect("export should succeed for owner");
+    let exported_text = exported.text().await.unwrap();
+    assert!(exported_text.contains("# First slide title"), "exported document keeps the slide title");
+    assert!(exported_text.contains("This is the body paragraph."), "exported document keeps body text");
+    assert!(exported_text.contains("> A callout quote."), "exported document keeps the callout");
+}

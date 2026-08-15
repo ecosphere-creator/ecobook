@@ -5,7 +5,8 @@
 //! tests point them at `wiremock::MockServer`s.
 use jsonwebtoken::{encode, Algorithm, EncodingKey, Header};
 use serde::Serialize;
-use ecobook_service::{config::AppConfig, routes, state::AppState};
+use ecobook_service::config::{AppConfig, StorageBackend};
+use ecobook_service::{routes, state::AppState};
 use std::net::SocketAddr;
 use uuid::Uuid;
 
@@ -62,6 +63,14 @@ pub async fn spawn(peers: Peers<'_>) -> TestApp {
         payments_base_url: peers.payments.to_string(),
         community_base_url: peers.community.to_string(),
         storage_local_path: storage_path.to_string_lossy().to_string(),
+        storage_backend: StorageBackend::Local,
+        s3_endpoint: String::new(),
+        s3_region: "us-east-1".to_string(),
+        s3_bucket: String::new(),
+        s3_access_key: String::new(),
+        s3_secret_key: String::new(),
+        rate_limit_general_burst: 120,
+        rate_limit_general_replenish_secs: 1,
     };
 
     let state = AppState::new(db.clone(), config);

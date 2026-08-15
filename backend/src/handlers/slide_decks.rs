@@ -470,13 +470,86 @@ pub async fn delete_slide_deck(
     Ok(StatusCode::NO_CONTENT)
 }
 
-/// `.ktt` archive export/import (KttArchiveService in the Java version)
-/// was deliberately not ported -- see README.md. Left as an explicit 501
-/// rather than silently dropping the routes.
-pub async fn export_slide_deck() -> StatusCode {
-    StatusCode::NOT_IMPLEMENTED
+/// Import a deck from the portable markdown document format. The body is the
+/// document itself (`text/markdown` or `text/plain`); it is parsed into a
+/// `SlideDeckInput` and persisted exactly like `POST /book`, so ownership,
+/// slug resolution and publish validation all follow the normal path.
+pub async fn import_slide_deck(
+    State(state): State<AppState>,
+    auth: AuthUser,
+    body: String,
+) -> AppResult<(StatusCode, Json<SlideDeckDto>)> {
+    auth.require_role(AUTHOR_ROLES)?;
+
+    let input = crate::deck_doc::parse_document(&body)?;
+    validate_publish_fields(&input)?;
+
+    let status = input.status.clone().filter(|s| !s.trim().is_empty()).unwrap_or_else(|| "draft".to_string());
+    let slug = resolve_editable_slug(&state, input.name.as_deref(), input.slug.as_deref(), None).await;
+    let now = bson::DateTime::now();
+
+    let deck = repo::slide_decks::insert(
+        &state,
+        SlideDeck {
+            id: None,
+            name: input.name,
+            slug,
+            subtitle: input.subtitle,
+            cover_url: input.cover_url,
+            description: input.description,
+            long_summary: input.long_summary,
+            learning_objectives: input.learning_objectives,
+            requirements: input.requirements,
+            target_audience: input.target_audience,
+            tags: input.tags,
+            level: input.level,
+            language: input.language,
+            instructor_name: input.instructor_name,
+            estimated_duration_minutes: input.estimated_duration_minutes,
+            status,
+            owner_id: auth.user_id.clone(),
+            community_id: input.community_id,
+            event_id: input.event_id,
+            theme: input.theme,
+            transition: input.transition,
+            layout_format: input.layout_format,
+            price: input.price,
+            compare_at_price: input.compare_at_price,
+            paywall_start_slide_index: input.paywall_start_slide_index,
+            slides: input.slides,
+            flow: input.flow,
+            gallery_images: input.gallery_images,
+            guided_audio_library: input.guided_audio_library,
+            created_at: now,
+            updated_at: now,
+        },
+    )
+    .await?;
+
+    Ok((StatusCode::CREATED, Json(SlideDeckDto::from(&deck))))
 }
 
-pub async fn import_slide_deck() -> StatusCode {
-    StatusCode::NOT_IMPLEMENTED
+/// Export a deck as the portable markdown document — the inverse of
+/// `POST /book/import`. Owner or platform `OWNER` only.
+pub async fn export_slide_deck(
+    State(state): State<AppState>,
+    auth: AuthUser,
+    Path(id): Path<String>,
+) -> AppResult<axum::response::Response> {
+    let deck = repo::slide_decks::require_by_id_or_slug(&state, &id).await?;
+    if !is_editor(&state, &deck, &auth.user_id).await {
+        return Err(AppError::Forbidden("Anda tidak memiliki akses untuk mengekspor book ini".to_string()));
+    }
+    let doc = crate::deck_doc::serialize_deck(&deck);
+    Ok(
+        axum::response::Response::builder()
+            .status(StatusCode::OK)
+            .header("content-type", "text/markdown; charset=utf-8")
+            .header(
+                "content-disposition",
+                format!("attachment; filename=\"{}.md\"", deck.slug.clone().unwrap_or_else(|| "deck".to_string())),
+            )
+            .body(axum::body::Body::from(doc))
+            .unwrap(),
+    )
 }

@@ -29,8 +29,9 @@ type-checked; flip `PAYWALL_ACTIVE` to `true` when the paywall ships.
 
 Most of the backend still reads as "slides" (crate `ecobook-service`, routes
 `/api/book/*`) because it was cloned from `slides`. The frontend is the new
-Phaser reader. The converter scripts under `scripts/` generate deck JSON from
-markdown — same shape as slides, so decks seeded for slides work for ecobook.
+Phaser reader. Decks are authored in 16:9 presentation format and imported
+through the portable markdown document format (see below); the responsive
+`/ecobook` portrait reader adapts that presentation into flowing pages.
 
 ## Status
 
@@ -39,22 +40,63 @@ Mostly fully ported and verified. Source: `SlideDeckController`/
 `AuthorImageAssetController`/`AuthorImageAssetService`,
 `AuthorPollTemplateController`/`AuthorPollTemplateService`,
 `PollVoteController`/`PollVoteService`, `BookSessionController`/
-`BookSessionService` from `lms-backend`. One deliberate scope cut: see
-below.
+`BookSessionService` from `lms-backend`.
 
-## Deliberately not ported: `.ktt` archive export/import
+## Deck document import/export (replaces the Java `.ktt` archive)
 
-`GET /book/{id}/export` and `POST /book/import` return `501 Not
-Implemented`. The Java version's `KttArchiveService` (336 lines) packages
-a deck plus its referenced images/audio into a bespoke ZIP archive and
-reverses it on import. This is a real, self-contained feature but not
-security-relevant and not part of the everyday read/write path — porting
-it faithfully (ZIP writing/reading, manifest format, referenced-asset
-extraction and repacking) was judged lower value than the ~15 other
-correctness and security fixes made across this domain, given the size of
-everything else that needed porting first. Routes are wired to explicit
-501s rather than silently dropped, so this is visible instead of a mystery
-404. If this feature turns out to matter, port `KttArchiveService` next.
+`POST /book/import` and `GET /book/{id}/export` implement a **portable
+markdown deck-document format** — the modern replacement for the Java
+version's bespoke `.ktt` ZIP archive (deliberately not ported as-is). A deck
+document is one markdown file: YAML frontmatter (deck metadata + theme tokens)
+followed by a 16:9 slide body.
+
+```markdown
+---
+deck:
+  name: "Ecosphere — The Software Composition Platform"
+  slug: eco-investor-pitch
+  subtitle: "The Software Composition Platform for the AI era"
+  level: "Intermediate"
+  language: "en"
+  instructorName: "Ecosphere"
+  tags: [pitch, ecosphere, investor]
+  status: draft
+theme:
+  base: light
+  bg: "#f7f6f2"
+  ink: "#17141d"
+  accent: "#5b3fd6"
+  surface: "#ffffff"
+  fontDisplay: "Manrope, ui-sans-serif, system-ui, sans-serif"
+  fontMono: "DM Mono, ui-monospace, monospace"
+---
+
+# The next wave of lean infrastructure
+
+A paragraph becomes a body element.
+
+> A quote or key stat becomes a callout element.
+
+```text
+code / pipeline becomes a code element
+```
+```
+
+Mapping rules: `#` starts a new slide (H1 text = slide title element),
+`##`/`###` become level-2/3 sub-titles, paragraphs become body elements,
+`>` blockquotes become callouts, fenced code blocks become code elements, and
+a `---` rule is an explicit slide break. Elements are auto-stacked on the
+1920x1080 canvas so they never overlap.
+
+- `POST /api/book/import` — body is the document (`text/markdown`); parsed
+  into a `SlideDeckInput` and persisted exactly like `POST /book` (same auth,
+  slug resolution, publish validation). Returns the created deck.
+- `GET /api/book/:id/export` — owner or platform `OWNER`; returns the deck as
+  a downloadable `.md` document (the inverse of import).
+
+The deck's theme tokens are stored as a JSON blob in `deck.theme`; the Phaser
+reader applies them as its default palette ("✎ deck" button in the control
+bar). Omitting the `theme:` block falls back to the getecosphere defaults.
 
 ## Dependencies
 

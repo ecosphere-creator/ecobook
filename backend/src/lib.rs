@@ -5,6 +5,7 @@ pub mod auth_client;
 pub mod auth_extractor;
 pub mod community_client;
 pub mod config;
+pub mod deck_doc;
 pub mod dto;
 pub mod error;
 pub mod handlers;
