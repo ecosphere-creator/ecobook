@@ -50,7 +50,7 @@ runtime:
   dependencies: []
 
 provenance:
-  source: ""
+  source: https://github.com/getecosphere/ecobook.git
   commit: ""
   built_by: ""
   built_at: ""
